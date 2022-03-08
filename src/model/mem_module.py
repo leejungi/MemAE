@@ -8,7 +8,7 @@ import numpy as np
 
 #
 class MemoryUnit(nn.Module):
-	def __init__(self, mem_dim, fea_dim, shrink_thres=0.0025):
+	def __init__(self, mem_dim, fea_dim, shrink_thres=0.0025, sim="cos"):
 		super(MemoryUnit, self).__init__()
 		self.mem_dim = mem_dim
 		self.fea_dim = fea_dim
@@ -26,7 +26,11 @@ class MemoryUnit(nn.Module):
 			self.bias.data.uniform_(-stdv, stdv)
 
 	def forward(self, input):
-		att_weight = F.linear(input, self.weight)  # Fea x Mem^T, (TxC) x (CxM) = TxM
+		if sim== "cos":
+			input = input.unsqueeze(1)
+			att_weight = F.cosine_similarity(input, self.weight,-1)  # Fea x Mem^T, (TxC) x (CxM) = TxM
+		else:
+			att_weight = F.linear(input, self.weight)  # Fea x Mem^T, (TxC) x (CxM) = TxM
 		att_weight = F.softmax(att_weight, dim=1)  # TxM
 		# ReLU based shrinkage, hard shrinkage for positive value
 		if(self.shrink_thres>0):
